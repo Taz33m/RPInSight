@@ -133,7 +133,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ map, onSearch }) => {
       {aiResponse && aiResponse.content && (
         <div className="w-full p-4 bg-white/90 backdrop-blur-sm rounded-lg shadow-lg border border-gray-200 transition-all duration-200 ease-in-out">
           <div className="text-sm text-gray-700">
-            <span className="font-semibold text-red-800">Puckman: </span>
+            <span className="font-semibold text-red-800">Taz: </span>
             {aiResponse.content}
           </div>
           {aiResponse.buildingName && (

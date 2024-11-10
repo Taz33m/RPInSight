@@ -1,4 +1,4 @@
-import React, { useState, useEffect, ChangeEvent, useRef } from 'react';
+import React, { useState, useEffect, ChangeEvent } from 'react';
 import mapboxgl from 'mapbox-gl';
 import { Search, Loader2 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
@@ -9,39 +9,22 @@ interface SearchBarProps {
   onSearch: (location: any) => void;
 }
 
-interface AIResponse {
-  content: string;
-  buildingName: string;
-  coordinates: [number, number] | null;
-}
-
 const SearchBar: React.FC<SearchBarProps> = ({ map, onSearch }) => {
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [suggestions, setSuggestions] = useState<any[]>([]);
-  const [aiResponse, setAiResponse] = useState<AIResponse | null>(null);
-  const markerRef = useRef<mapboxgl.Marker | null>(null);
+  const [aiResponse, setAiResponse] = useState<string>('');
 
   const handleInputChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
     setQuery(e.target.value);
-    // Automatically adjust height
     e.target.style.height = 'inherit';
     e.target.style.height = `${e.target.scrollHeight}px`;
-  };
-
-  const clearMarker = () => {
-    if (markerRef.current) {
-      markerRef.current.remove();
-      markerRef.current = null;
-    }
   };
 
   const searchWithAI = async () => {
     if (!query.trim()) return;
     
     setLoading(true);
-    clearMarker();
-
     try {
       const response = await fetch('/api/search', {
         method: 'POST',
@@ -55,55 +38,40 @@ const SearchBar: React.FC<SearchBarProps> = ({ map, onSearch }) => {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const data: AIResponse = await response.json();
-      setAiResponse(data);
+      const data = await response.json();
+      console.log('AI Response:', data);
+      setAiResponse(data.content);
       
-      if (map && data.coordinates) {
-        // Remove existing marker if any
-        clearMarker();
-
-        // Create new marker
-        markerRef.current = new mapboxgl.Marker({
-          color: "#C41E3A", // RPI Red
-          scale: 1.2
-        })
-          .setLngLat(data.coordinates)
-          .addTo(map);
-
-        // Fly to location
-        map.flyTo({
-          center: data.coordinates,
-          zoom: 17,
-          duration: 2000
+      if (map) {
+        const features = map.queryRenderedFeatures();
+        const matchingLocations = features.filter(feature => {
+          const name = feature.properties?.name?.toLowerCase() || '';
+          const aiSuggestions = data.content.toLowerCase();
+          return name.includes(aiSuggestions) || aiSuggestions.includes(name);
         });
+        
+        setSuggestions(matchingLocations);
       }
-
     } catch (error) {
       console.error('Search error:', error);
-      setAiResponse({
-        content: 'Sorry, I encountered an error processing your request.',
-        buildingName: '',
-        coordinates: null
-      });
+      setAiResponse('Sorry, I encountered an error processing your request.');
     } finally {
       setLoading(false);
     }
   };
 
-  // Cleanup marker when component unmounts
   useEffect(() => {
-    return () => {
-      clearMarker();
-    };
-  }, []);
+    const delaySearch = setTimeout(() => {
+      if (query.length >= 2) {
+        searchWithAI();
+      } else {
+        setSuggestions([]);
+        setAiResponse('');
+      }
+    }, 300);
 
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    // Search when Enter is pressed (without Shift)
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      searchWithAI();
-    }
-  };
+    return () => clearTimeout(delaySearch);
+  }, [query]);
 
   return (
     <div className="relative w-full space-y-2">
@@ -111,14 +79,13 @@ const SearchBar: React.FC<SearchBarProps> = ({ map, onSearch }) => {
         <Textarea
           value={query}
           onChange={handleInputChange}
-          onKeyDown={handleKeyPress}
           placeholder="Ask about any campus location..."
           className="flex-grow min-h-[40px] max-h-[120px] resize-none py-2 px-3"
           disabled={loading}
           rows={1}
         />
         <Button 
-          onClick={searchWithAI}
+          onClick={() => suggestions[0] && onSearch(suggestions[0])}
           className="bg-gradient-to-r from-red-900 to-red-700 hover:from-red-800 hover:to-red-600 h-auto"
           disabled={loading}
         >
@@ -130,17 +97,34 @@ const SearchBar: React.FC<SearchBarProps> = ({ map, onSearch }) => {
         </Button>
       </div>
 
-      {aiResponse && aiResponse.content && (
+      {aiResponse && (
         <div className="w-full p-4 bg-white/90 backdrop-blur-sm rounded-lg shadow-lg border border-gray-200 transition-all duration-200 ease-in-out">
           <div className="text-sm text-gray-700">
-            <span className="font-semibold text-red-800">Puckman: </span>
-            {aiResponse.content}
+            <span className="font-semibold text-red-800">AI Assistant: </span>
+            {aiResponse}
           </div>
-          {aiResponse.buildingName && (
-            <div className="mt-2 text-xs text-gray-500">
-              Location: {aiResponse.buildingName}
-            </div>
-          )}
+        </div>
+      )}
+
+      {suggestions.length > 0 && (
+        <div className="absolute z-50 w-full mt-1 bg-white rounded-md shadow-lg max-h-60 overflow-auto">
+          {suggestions.map((location, index) => (
+            <button
+              key={index}
+              className="w-full px-4 py-2 text-left hover:bg-gray-100"
+              onClick={() => {
+                onSearch(location);
+                setSuggestions([]);
+                setQuery(location.properties.name);
+                setAiResponse('');
+              }}
+            >
+              <div className="font-medium">{location.properties.name}</div>
+              {location.properties.location && (
+                <div className="text-sm text-gray-500">{location.properties.location}</div>
+              )}
+            </button>
+          ))}
         </div>
       )}
     </div>

@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import Image from 'next/image'
 import SearchBar from '@/components/SearchBar'
-import lectureHalls from '@/data/lecture_halls.geojson';
+import lectureHalls from '@/data/lecuture_halls.geojson';
 import studyHalls from '@/data/study_halls.geojson';
 import diningHalls from '@/data/dining_halls.geojson';
 import parkingLots from '@/data/parking.geojson';

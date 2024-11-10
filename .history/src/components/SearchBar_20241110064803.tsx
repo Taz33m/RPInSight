@@ -22,18 +22,17 @@ const SearchBar: React.FC<SearchBarProps> = ({ map, onSearch }) => {
   const [aiResponse, setAiResponse] = useState<AIResponse | null>(null);
   const markerRef = useRef<mapboxgl.Marker | null>(null);
 
-  const handleInputChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
-    setQuery(e.target.value);
-    // Automatically adjust height
-    e.target.style.height = 'inherit';
-    e.target.style.height = `${e.target.scrollHeight}px`;
-  };
-
   const clearMarker = () => {
     if (markerRef.current) {
       markerRef.current.remove();
       markerRef.current = null;
     }
+  };
+
+  const handleInputChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
+    setQuery(e.target.value);
+    e.target.style.height = 'inherit';
+    e.target.style.height = `${e.target.scrollHeight}px`;
   };
 
   const searchWithAI = async () => {
@@ -90,6 +89,22 @@ const SearchBar: React.FC<SearchBarProps> = ({ map, onSearch }) => {
     }
   };
 
+  useEffect(() => {
+    const delaySearch = setTimeout(() => {
+      if (query.length >= 2) {
+        searchWithAI();
+      } else {
+        setSuggestions([]);
+        setAiResponse(null);
+        clearMarker();
+      }
+    }, 300);
+
+    return () => {
+      clearTimeout(delaySearch);
+    };
+  }, [query]);
+
   // Cleanup marker when component unmounts
   useEffect(() => {
     return () => {
@@ -97,22 +112,13 @@ const SearchBar: React.FC<SearchBarProps> = ({ map, onSearch }) => {
     };
   }, []);
 
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    // Search when Enter is pressed (without Shift)
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      searchWithAI();
-    }
-  };
-
   return (
     <div className="relative w-full space-y-2">
       <div className="flex gap-2">
         <Textarea
           value={query}
           onChange={handleInputChange}
-          onKeyDown={handleKeyPress}
-          placeholder="Ask about any campus location..."
+          placeholder="Search for any campus location..."
           className="flex-grow min-h-[40px] max-h-[120px] resize-none py-2 px-3"
           disabled={loading}
           rows={1}
@@ -133,14 +139,31 @@ const SearchBar: React.FC<SearchBarProps> = ({ map, onSearch }) => {
       {aiResponse && aiResponse.content && (
         <div className="w-full p-4 bg-white/90 backdrop-blur-sm rounded-lg shadow-lg border border-gray-200 transition-all duration-200 ease-in-out">
           <div className="text-sm text-gray-700">
-            <span className="font-semibold text-red-800">Puckman: </span>
+            <span className="font-semibold text-red-800">AI Assistant: </span>
             {aiResponse.content}
           </div>
-          {aiResponse.buildingName && (
-            <div className="mt-2 text-xs text-gray-500">
-              Location: {aiResponse.buildingName}
-            </div>
-          )}
+        </div>
+      )}
+
+      {suggestions.length > 0 && (
+        <div className="absolute z-50 w-full mt-1 bg-white rounded-md shadow-lg max-h-60 overflow-auto">
+          {suggestions.map((location, index) => (
+            <button
+              key={index}
+              className="w-full px-4 py-2 text-left hover:bg-gray-100"
+              onClick={() => {
+                onSearch(location);
+                setSuggestions([]);
+                setQuery(location.properties.name);
+                setAiResponse(null);
+              }}
+            >
+              <div className="font-medium">{location.properties.name}</div>
+              {location.properties.location && (
+                <div className="text-sm text-gray-500">{location.properties.location}</div>
+              )}
+            </button>
+          ))}
         </div>
       )}
     </div>
