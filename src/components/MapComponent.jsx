@@ -27,9 +27,11 @@ export default function MapComponent() {
   const popup = useRef(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedLocation, setSelectedLocation] = useState(null)
+  const currentMarker = useRef(null)
+  const [mapInstance, setMapInstance] = useState(null)
 
   useEffect(() => {
-    if (map.current) return
+    if (map.current) return;
 
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
@@ -84,6 +86,9 @@ export default function MapComponent() {
       map.current.on('mouseleave', () => {
         map.current.getCanvas().style.cursor = ''
       })
+
+      console.log('Map loaded, setting instance');
+      setMapInstance(map.current);
     })
 
     map.current.addControl(new mapboxgl.NavigationControl(), 'top-right')
@@ -183,22 +188,37 @@ export default function MapComponent() {
   };
 
   const handleSearch = () => {
-    const features = map.current.queryRenderedFeatures()
+    const features = map.current.queryRenderedFeatures();
     const location = features.find(feature => 
       feature.properties?.name?.toLowerCase().includes(searchQuery.toLowerCase())
-    )
+    );
     
     if (location) {
-      setSelectedLocation(location)
+      setSelectedLocation(location);
+      
+      // Create new marker
+      if (currentMarker.current) {
+        currentMarker.current.remove();
+      }
+      
+      currentMarker.current = new mapboxgl.Marker({
+        color: "#C41E3A",
+        scale: 1.2
+      })
+        .setLngLat(location.geometry.coordinates)
+        .addTo(map.current);
+
+      // Fly to location
       map.current.flyTo({
         center: location.geometry.coordinates,
         zoom: 17
-      })
+      });
       
+      // Show popup
       popup.current
         .setLngLat(location.geometry.coordinates)
         .setHTML(createPopupContent(location))
-        .addTo(map.current)
+        .addTo(map.current);
     }
   }
 
@@ -254,18 +274,10 @@ export default function MapComponent() {
             />
           </div>
           <SearchBar 
-            map={map.current} 
+            map={mapInstance}
             onSearch={(location) => {
-              setSelectedLocation(location);
-              map.current.flyTo({
-                center: location.geometry.coordinates,
-                zoom: 17
-              });
-              
-              popup.current
-                .setLngLat(location.geometry.coordinates)
-                .setHTML(createPopupContent(location))
-                .addTo(map.current);
+              console.log('Search callback received location:', location);
+              setSearchQuery(location?.properties?.name || '');
             }} 
           />
         </div>
