@@ -59,14 +59,8 @@ const SearchBar: React.FC<SearchBarProps> = ({ map, onSearch }) => {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const data = await response.json();
-      
-      // Ensure content is a string
-      setAiResponse({
-        content: typeof data.content === 'object' ? JSON.stringify(data.content) : data.content,
-        buildingName: data.buildingName,
-        coordinates: data.coordinates
-      });
+      const data: AIResponse = await response.json();
+      setAiResponse(data);
       
       if (map && data.coordinates) {
         // Remove existing marker if any

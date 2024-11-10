@@ -113,9 +113,7 @@ export async function POST(request: Request) {
              - Include hours and facilities when available
              - Format response as a simple string for the description
              - Do not include raw objects or arrays in the response
-          4. For "nearest" or "closest" queries, prioritize locations near user's coordinates
-
-          Always respond with a valid JSON object containing 'buildingName' and 'description' fields.`
+          4. For "nearest" or "closest" queries, prioritize locations near user's coordinates`
         },
         {
           role: "user",
@@ -127,34 +125,7 @@ export async function POST(request: Request) {
       response_format: { type: "json_object" }
     });
 
-    // Validate OpenAI response
-    if (!completion.choices?.[0]?.message?.content) {
-      console.error('Invalid OpenAI response structure:', completion);
-      return NextResponse.json({ 
-        error: 'Invalid API response',
-        details: 'The API response was empty or malformed'
-      }, { status: 500 });
-    }
-
-    // Add debug logging
-    console.log('OpenAI response:', completion.choices[0].message.content);
-
-    let aiResponse;
-    try {
-      aiResponse = JSON.parse(completion.choices[0].message.content);
-      
-      // Validate response structure
-      if (!aiResponse.buildingName || !aiResponse.description) {
-        throw new Error('Missing required fields in AI response');
-      }
-    } catch (parseError) {
-      console.error('Failed to parse OpenAI response:', parseError);
-      console.error('Raw content:', completion.choices[0].message.content);
-      return NextResponse.json({ 
-        error: 'Invalid response format',
-        details: 'Failed to parse AI response or missing required fields'
-      }, { status: 500 });
-    }
+    const aiResponse = JSON.parse(completion.choices[0].message.content);
 
     // Fix: Find location before using it
     const location = allLocations.find(loc => 

@@ -80,14 +80,10 @@ export async function POST(request: Request) {
       // Sort by distance
       locationsWithDistances.sort((a, b) => a.distance - b.distance);
 
-      // Ensure we're only using string values for the nearest locations
+      // Add distance context to the query
       const nearestLocations = locationsWithDistances
         .slice(0, 3)
-        .map(loc => ({
-          name: loc.properties.name,
-          distance: Math.round(loc.distance)
-        }))
-        .map(loc => `${loc.name} (${loc.distance} meters away)`);
+        .map(loc => `${loc.properties.name} (${Math.round(loc.distance)} meters away)`);
       
       processedQuery += ` - Nearest locations are: ${nearestLocations.join(', ')}`;
     }
@@ -106,16 +102,16 @@ export async function POST(request: Request) {
           1. First, try to find an exact or close match from the provided JSON data
           2. If no good match exists BUT the query is about a known RPI location (like Mueller Center, '87 Gym, Union, etc.):
              - Provide accurate information about that location
-             - Format: Same JSON with 'buildingName' and 'description' fields
+             - Format: Same JSON with 'buildingName' and 'description'
              - Note: Only do this for CONFIRMED RPI locations you're certain about
           3. For all responses:
              - Be specific about what can be done at the location
              - Include hours and facilities when available
-             - Format response as a simple string for the description
-             - Do not include raw objects or arrays in the response
+             - Format as JSON with 'buildingName' and 'description' fields
           4. For "nearest" or "closest" queries, prioritize locations near user's coordinates
-
-          Always respond with a valid JSON object containing 'buildingName' and 'description' fields.`
+          
+          Remember: While primary data is preferred, don't give incorrect/irrelevant answers just to stick to the dataset. 
+          It's better to provide accurate information about a known RPI location than force a poor match from the primary data.`
         },
         {
           role: "user",
@@ -127,54 +123,22 @@ export async function POST(request: Request) {
       response_format: { type: "json_object" }
     });
 
-    // Validate OpenAI response
-    if (!completion.choices?.[0]?.message?.content) {
-      console.error('Invalid OpenAI response structure:', completion);
-      return NextResponse.json({ 
-        error: 'Invalid API response',
-        details: 'The API response was empty or malformed'
-      }, { status: 500 });
-    }
+    const aiResponse = JSON.parse(completion.choices[0].message.content);
 
-    // Add debug logging
-    console.log('OpenAI response:', completion.choices[0].message.content);
-
-    let aiResponse;
-    try {
-      aiResponse = JSON.parse(completion.choices[0].message.content);
-      
-      // Validate response structure
-      if (!aiResponse.buildingName || !aiResponse.description) {
-        throw new Error('Missing required fields in AI response');
-      }
-    } catch (parseError) {
-      console.error('Failed to parse OpenAI response:', parseError);
-      console.error('Raw content:', completion.choices[0].message.content);
-      return NextResponse.json({ 
-        error: 'Invalid response format',
-        details: 'Failed to parse AI response or missing required fields'
-      }, { status: 500 });
-    }
-
-    // Fix: Find location before using it
+    // Find coordinates either from our dataset or known locations
     const location = allLocations.find(loc => 
       loc.properties.name.toLowerCase() === aiResponse.buildingName.toLowerCase()
     );
+    const coordinates = location ? location.geometry.coordinates : 
+      knownLocations[aiResponse.buildingName] || null;
 
-    // Ensure we're returning string values, not objects
     return NextResponse.json({
-      content: typeof aiResponse.description === 'object' 
-        ? JSON.stringify(aiResponse.description) 
-        : aiResponse.description,
+      content: aiResponse.description,
       buildingName: aiResponse.buildingName,
-      coordinates: location?.geometry.coordinates || knownLocations[aiResponse.buildingName] || null
+      coordinates: coordinates
     });
-
   } catch (error) {
     console.error('API Error:', error);
-    return NextResponse.json({ 
-      error: 'Error processing request',
-      details: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 });
+    return NextResponse.json({ error: 'Error processing request' }, { status: 500 });
   }
 }

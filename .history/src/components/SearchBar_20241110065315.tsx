@@ -59,14 +59,8 @@ const SearchBar: React.FC<SearchBarProps> = ({ map, onSearch }) => {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const data = await response.json();
-      
-      // Ensure content is a string
-      setAiResponse({
-        content: typeof data.content === 'object' ? JSON.stringify(data.content) : data.content,
-        buildingName: data.buildingName,
-        coordinates: data.coordinates
-      });
+      const data: AIResponse = await response.json();
+      setAiResponse(data);
       
       if (map && data.coordinates) {
         // Remove existing marker if any
@@ -118,15 +112,10 @@ const SearchBar: React.FC<SearchBarProps> = ({ map, onSearch }) => {
   useEffect(() => {
     if (!map) return;
 
-    const geolocateControl = map._controls.find(
-      control => control instanceof mapboxgl.GeolocateControl
-    );
-
+    const geolocateControl = map.getControl('GeolocateControl');
     if (geolocateControl) {
-      geolocateControl.on('geolocate', (e) => {
-        const { longitude, latitude } = e.coords;
-        userLocationRef.current = [longitude, latitude];
-        console.log('User location updated:', userLocationRef.current);
+      geolocateControl.on('geolocate', (e: any) => {
+        userLocationRef.current = [e.coords.longitude, e.coords.latitude];
       });
     }
   }, [map]);
@@ -138,7 +127,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ map, onSearch }) => {
           value={query}
           onChange={handleInputChange}
           onKeyDown={handleKeyPress}
-          placeholder="Find any campus location..."
+          placeholder="Ask about any campus location..."
           className="flex-grow min-h-[40px] max-h-[120px] resize-none py-2 px-3"
           disabled={loading}
           rows={1}
