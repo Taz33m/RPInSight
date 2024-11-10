@@ -1,0 +1,2 @@
+export const MAPBOX_ACCESS_TOKEN = 'pk.eyJ1IjoibWFwc2d1eSIsImEiOiJjbTB0Y2hua3Uwd3NoMnFxNWNtZXR4YW8wIn0.RZRd1UCQu5BlH3ARl0bNWA'
+export const MAPBOX_STYLE_URL = 'mapbox://styles/mapsguy/cm3al9nju00ik01qs9zqq8tbd'

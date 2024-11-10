@@ -1,0 +1,132 @@
+{
+    "type": "FeatureCollection",
+    "features": [
+      {
+        "type": "Feature",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [-73.67921611635055, 42.72933993024484]
+        },
+        "properties": {
+          "name": "Darrin Communications Center (DCC)",
+          "location": "RPI Campus",
+          "departments": ["Communication and Media", "Electrical, Computer, and Systems Engineering"],
+          "notes": "Houses major lecture halls and classrooms.",
+          "additional_info_link": "https://info.rpi.edu/map/dcc"
+        }
+      },
+      {
+        "type": "Feature",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [-73.67863020334609, 42.72936700438245]
+        },
+        "properties": {
+          "name": "Low Center for Industrial Innovation (CII)",
+          "location": "RPI Campus",
+          "departments": ["Mechanical, Aerospace, and Nuclear Engineering", "Industrial and Systems Engineering"],
+          "notes": "Main engineering building with multiple labs and lecture halls.",
+          "additional_info_link": "https://info.rpi.edu/map/low-center"
+        }
+      },
+      {
+        "type": "Feature",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [-73.68119608936347, 42.730054595010635]
+        },
+        "properties": {
+          "name": "Greene Building",
+          "location": "RPI Campus",
+          "departments": ["Architecture"],
+          "notes": "Home of the School of Architecture, with studios and lecture halls.",
+          "additional_info_link": "https://info.rpi.edu/map/greene-building"
+        }
+      },
+      {
+        "type": "Feature",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [-73.68253413169256, 42.73089396061268]
+        },
+        "properties": {
+          "name": "Walker Laboratory",
+          "location": "RPI Campus",
+          "departments": ["Chemical and Biological Engineering"],
+          "notes": "Primarily used for Chemical Engineering courses and labs.",
+          "additional_info_link": "https://info.rpi.edu/map/walker-lab"
+        }
+      },
+      {
+        "type": "Feature",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [-73.68030816052801, 42.72963463828187]
+        },
+        "properties": {
+          "name": "J. Erik Jonsson Engineering Center (JEC)",
+          "location": "RPI Campus",
+          "departments": ["Electrical, Computer, and Systems Engineering", "Mechanical, Aerospace, and Nuclear Engineering", "Civil and Environmental Engineering"],
+          "notes": "Features advanced engineering labs and lecture halls.",
+          "additional_info_link": "https://info.rpi.edu/map/jonsson-engineering-center"
+        }
+      },
+      {
+        "type": "Feature",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [-73.68159850285693, 42.730994826460034]
+        },
+        "properties": {
+          "name": "Sage Laboratory",
+          "location": "RPI Campus",
+          "departments": ["Biological Sciences", "Mathematical Sciences"],
+          "notes": "Hosts science and mathematics lectures and labs.",
+          "additional_info_link": "https://info.rpi.edu/map/sage-laboratory"
+        }
+      },
+      {
+        "type": "Feature",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [-73.678401302857, 42.72835742653425]
+        },
+        "properties": {
+          "name": "Center for Biotechnology and Interdisciplinary Studies (CBIS)",
+          "location": "RPI Campus",
+          "departments": ["Biological Sciences", "Biomedical Engineering", "Chemical and Biological Engineering"],
+          "notes": "State-of-the-art research facility for interdisciplinary studies.",
+          "additional_info_link": "https://info.rpi.edu/map/cbis"
+        }
+      },
+      {
+        "type": "Feature",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [-73.68180740285705, 42.72840504527305]
+        },
+        "properties": {
+          "name": "Materials Research Center (MRC)",
+          "location": "RPI Campus",
+          "departments": ["Materials Science and Engineering"],
+          "notes": "Facility dedicated to materials research and development.",
+          "additional_info_link": "https://info.rpi.edu/map/mrc"
+        }
+      },
+      {
+        "type": "Feature",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [-73.68123957402155, 42.72828952664647]
+        },
+        "properties": {
+          "name": "Cogswell Laboratory",
+          "location": "RPI Campus",
+          "departments": ["Physics", "Applied Physics"],
+          "notes": "Laboratory spaces for physics research and instruction.",
+          "additional_info_link": "https://info.rpi.edu/map/cogswell-laboratory"
+        }
+      }
+    ]
+  }
+  

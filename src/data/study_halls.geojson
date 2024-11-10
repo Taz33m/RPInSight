@@ -1,0 +1,77 @@
+{
+    "type": "FeatureCollection",
+    "features": [
+      {
+        "type": "Feature",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [-73.68254, 42.72940]
+        },
+        "properties": {
+          "name": "Folsom Library",
+          "location": "110 8th St, Troy, NY 12180",
+          "hours": {
+            "monday-thursday": "8:00 AM - 12:00 AM",
+            "friday": "8:00 AM - 8:00 PM",
+            "saturday": "12:00 PM - 8:00 PM",
+            "sunday": "2:00 PM - 10:00 PM"
+          },
+          "special_facilities": ["Group Study Rooms", "Silent Study Areas", "Tech Lending"],
+          "notes": "Offers over 500 study seats, group study rooms, and tech equipment rentals.",
+          "website": "https://library.rpi.edu/"
+        }
+      },
+      {
+        "type": "Feature",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [-73.6786448605281, 42.727664640499405]
+        },
+        "properties": {
+          "name": "Academy Hall Study Lounge",
+          "location": "RPI Campus",
+          "hours": {
+            "monday-sunday": "24 Hours"
+          },
+          "special_facilities": ["Quiet Study Area", "Vending Machines"],
+          "notes": "Accessible 24/7 for students with campus ID.",
+          "website": "https://info.rpi.edu/map"
+        }
+      },
+      {
+        "type": "Feature",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [-73.67925348708572, 42.729373696582314]
+        },
+        "properties": {
+          "name": "Darrin Communications Center (DCC) Study Areas",
+          "location": "RPI Campus",
+          "hours": {
+            "monday-sunday": "6:00 AM - 12:00 AM"
+          },
+          "special_facilities": ["Open Seating", "Group Study Areas"],
+          "notes": "Various open seating areas available for individual and group study.",
+          "website": "https://info.rpi.edu/map"
+        }
+      },
+      {
+        "type": "Feature",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [-73.67667368730342, 42.72995305182842]
+        },
+        "properties": {
+          "name": "Student Union Study Spaces",
+          "location": "RPI Campus",
+          "hours": {
+            "monday-sunday": "7:00 AM - 12:00 AM"
+          },
+          "special_facilities": ["Group Study Rooms", "Lounge Areas", "Food Court"],
+          "notes": "Various study spaces available; hours may vary during breaks.",
+          "website": "https://union.rpi.edu/"
+        }
+      }
+    ]
+  }
+  

@@ -1,0 +1,86 @@
+{
+    "type": "FeatureCollection",
+    "features": [
+      {
+        "type": "Feature",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [-73.67925268936362, 42.72729244036527]
+        },
+        "properties": {
+          "name": "Academy Hall Parking Lot",
+          "location": "Corner of 15th Street & College Avenue",
+          "permit_required": true,
+          "visitor_parking": true,
+          "enforcement_hours": "Monday through Friday, 8:00 AM - 5:00 PM",
+          "overnight_parking_allowed": false,
+          "notes": "Metered parking available; permits can be purchased at the Public Safety & Parking Access Office."
+        }
+      },
+      {
+        "type": "Feature",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [-73.6821126012116, 42.72787229949983]
+        },
+        "properties": {
+          "name": "College Avenue Parking Garage",
+          "location": "College Avenue",
+          "permit_required": true,
+          "visitor_parking": false,
+          "enforcement_hours": "Monday through Friday, 8:00 AM - 5:00 PM",
+          "overnight_parking_allowed": false,
+          "notes": "Multi-level parking garage for permit holders."
+        }
+      },
+      {
+        "type": "Feature",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [-73.67977706819893, 42.732103746803894]
+        },
+        "properties": {
+          "name": "North Lot",
+          "location": "North of the Jonsson Engineering Center",
+          "permit_required": true,
+          "visitor_parking": false,
+          "enforcement_hours": "Monday through Friday, 8:00 AM - 5:00 PM",
+          "overnight_parking_allowed": false,
+          "notes": "Surface parking lot designated for faculty and staff."
+        }
+      },
+      {
+        "type": "Feature",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [-73.682067533541, 42.73180047859654]
+        },
+        "properties": {
+          "name": "West Lot",
+          "location": "West of the Low Center for Industrial Innovation",
+          "permit_required": true,
+          "visitor_parking": false,
+          "enforcement_hours": "Monday through Friday, 8:00 AM - 5:00 PM",
+          "overnight_parking_allowed": false,
+          "notes": "Surface parking lot primarily for student permit holders."
+        }
+      },
+      {
+        "type": "Feature",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [-73.66743905681253, 42.731436950656466]
+        },
+        "properties": {
+          "name": "East Campus Athletic Village (ECAV) Parking",
+          "location": "Adjacent to ECAV",
+          "permit_required": true,
+          "visitor_parking": true,
+          "enforcement_hours": "Monday through Friday, 8:00 AM - 5:00 PM",
+          "overnight_parking_allowed": false,
+          "notes": "Parking available for athletic events; visitor permits required."
+        }
+      }
+    ]
+  }
+  

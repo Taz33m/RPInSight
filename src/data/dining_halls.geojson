@@ -1,0 +1,112 @@
+{
+    "type": "FeatureCollection",
+    "features": [
+      {
+        "type": "Feature",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [-73.674080, 42.727355]
+        },
+        "properties": {
+          "name": "The Commons Dining Hall",
+          "location": "1999 Burdett Ave, Troy, NY 12180",
+          "hours": {
+            "monday-friday": {
+              "breakfast": "7:00 AM - 10:00 AM",
+              "continental_breakfast": "10:00 AM - 11:00 AM",
+              "lunch": "11:00 AM - 3:30 PM",
+              "dinner": "4:30 PM - 9:00 PM",
+              "late_night": "9:00 PM - 10:30 PM"
+            },
+            "saturday-sunday": {
+              "brunch": "9:00 AM - 2:00 PM",
+              "late_lunch": "2:00 PM - 4:30 PM",
+              "dinner": "4:30 PM - 9:00 PM",
+              "late_night": "9:00 PM - 10:30 PM"
+            }
+          },
+          "menu_link": "https://rpi.sodexomyway.com/en-us/locations/the-commons-dining-hall",
+          "features": ["All-you-care-to-eat", "Simple Zone (allergen-free section)"],
+          "payment_methods": ["Meal Plan", "Flex Dollars", "Cash", "Credit Card"],
+          "notes": "Dining options are included with student meal plans."
+        }
+      },
+      {
+        "type": "Feature",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [-73.678224, 42.729802]
+        },
+        "properties": {
+          "name": "Russell Sage Dining Hall",
+          "location": "Troy, NY 12180",
+          "hours": {
+            "monday-friday": {
+              "breakfast": "7:00 AM - 10:00 AM",
+              "continental_breakfast": "10:00 AM - 11:00 AM",
+              "lunch": "11:00 AM - 2:30 PM",
+              "dinner": "4:00 PM - 8:00 PM"
+            },
+            "saturday-sunday": {
+              "late_lunch": "1:30 PM - 4:00 PM",
+              "dinner": "4:00 PM - 8:00 PM"
+            }
+          },
+          "menu_link": "https://rpi.sodexomyway.com/en-us/locations/russell-sage-dining-hall",
+          "features": ["Buffet style dining", "Convenient location in the heart of the academic campus"],
+          "payment_methods": ["Meal Plan", "Flex Dollars", "Cash", "Credit Card"],
+          "notes": "Dining options are included with student meal plans."
+        }
+      },
+      {
+        "type": "Feature",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [-73.685949, 42.731004]
+        },
+        "properties": {
+          "name": "Blitman Dining Hall",
+          "location": "1800 6th Ave, Troy, NY 12180",
+          "hours": {
+            "monday-friday": {
+              "breakfast": "7:00 AM - 9:30 AM",
+              "dinner": "5:00 PM - 8:00 PM"
+            },
+            "saturday-sunday": {
+              "brunch": "10:30 AM - 1:00 PM",
+              "dinner": "5:00 PM - 8:00 PM"
+            }
+          },
+          "menu_link": "https://rpi.sodexomyway.com/en-us/locations/blitman-dining-hall",
+          "features": ["Restaurant-style dining", "Cutting-edge cuisine", "Touch screen ordering systems"],
+          "payment_methods": ["Meal Plan", "Flex Dollars", "Cash", "Credit Card"],
+          "notes": "Dining options are included with student meal plans."
+        }
+      },
+      {
+        "type": "Feature",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [-73.671281, 42.731028]
+        },
+        "properties": {
+          "name": "BARH Dining Hall",
+          "location": "100 Albright Ct, Troy, NY 12180",
+          "hours": {
+            "monday-friday": {
+              "breakfast": "7:00 AM - 9:30 AM",
+              "dinner": "5:00 PM - 9:00 PM"
+            },
+            "saturday-sunday": {
+              "brunch": "11:00 AM - 1:00 PM"
+            }
+          },
+          "menu_link": "https://rpi.sodexomyway.com/en-us/locations/barh-dining-hall",
+          "features": ["Buffet style dining", "Later dinner hours for student athletes"],
+          "payment_methods": ["Meal Plan", "Flex Dollars", "Cash", "Credit Card"],
+          "notes": "Dining options are included with student meal plans. No dinner served on weekends."
+        }
+      }
+    ]
+  }
+  
