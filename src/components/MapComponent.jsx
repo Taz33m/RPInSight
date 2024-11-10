@@ -7,47 +7,16 @@ import { Search, Map } from 'lucide-react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import Image from 'next/image'
 
 mapboxgl.accessToken = 'pk.eyJ1IjoibWFwc2d1eSIsImEiOiJjbTB0Y2hua3Uwd3NoMnFxNWNtZXR4YW8wIn0.RZRd1UCQu5BlH3ARl0bNWA'
 
 const campusCenter = [-73.6826, 42.7302]
 
-const campusLocations = [
-  {
-    name: 'Rensselaer Union',
-    coordinates: [-73.6766, 42.7302],
-    description: 'Student union building with dining, student activities, and meeting spaces',
-    type: 'student_center'
-  },
-  {
-    name: 'Folsom Library',
-    coordinates: [-73.6829, 42.7291],
-    description: 'Main campus library with study spaces and research resources',
-    type: 'library'
-  },
-  {
-    name: 'EMPAC',
-    coordinates: [-73.6839, 42.7288],
-    description: 'Experimental Media and Performing Arts Center',
-    type: 'arts'
-  },
-  {
-    name: 'Commons Dining Hall',
-    coordinates: [-73.6775, 42.7298],
-    description: 'Main dining facility on campus',
-    type: 'dining'
-  },
-  {
-    name: 'Walker Laboratory',
-    coordinates: [-73.6830, 42.7308],
-    description: 'Historic academic building with laboratories and classrooms',
-    type: 'academic'
-  }
-]
-
 export default function MapComponent() {
   const mapContainer = useRef(null)
   const map = useRef(null)
+  const popup = useRef(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedLocation, setSelectedLocation] = useState(null)
 
@@ -58,11 +27,58 @@ export default function MapComponent() {
       container: mapContainer.current,
       style: 'mapbox://styles/mapsguy/cm3al9nju00ik01qs9zqq8tbd',
       center: campusCenter,
-      zoom: 15
+      zoom: 15,
+      fadeDuration: 250,
+      crossSourceCollisions: true
+    })
+
+    popup.current = new mapboxgl.Popup({
+      closeButton: true,
+      closeOnClick: true,
+      className: 'custom-popup',
+      maxWidth: '300px',
+      offset: [15, 0]
+    })
+
+    map.current.on('load', () => {
+      map.current.on('click', (e) => {
+        const features = map.current.queryRenderedFeatures(e.point)
+        
+        if (!features.length) {
+          popup.current.remove()
+          return
+        }
+
+        const feature = features[0]
+        const coordinates = feature.geometry.coordinates.slice()
+        
+        while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
+          coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360
+        }
+        
+        const popupContent = createPopupContent(feature)
+        
+        if (popupContent) {
+          popup.current
+            .setLngLat(coordinates)
+            .setHTML(popupContent)
+            .addTo(map.current)
+        }
+      })
+
+      map.current.on('mouseenter', (e) => {
+        const features = map.current.queryRenderedFeatures(e.point)
+        if (features.length) {
+          map.current.getCanvas().style.cursor = 'pointer'
+        }
+      })
+
+      map.current.on('mouseleave', () => {
+        map.current.getCanvas().style.cursor = ''
+      })
     })
 
     map.current.addControl(new mapboxgl.NavigationControl(), 'top-right')
-
     map.current.addControl(
       new mapboxgl.GeolocateControl({
         positionOptions: {
@@ -71,95 +87,177 @@ export default function MapComponent() {
         trackUserLocation: true
       })
     )
-
-    map.current.on('load', () => {
-      // Add markers for campus locations
-      campusLocations.forEach(location => {
-        const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(`
-          <div class="p-2">
-            <h3 class="font-bold text-lg">${location.name}</h3>
-            <p class="text-sm mt-1">${location.description}</p>
-            <p class="text-xs mt-1 text-gray-500">Type: ${location.type}</p>
-          </div>
-        `)
-
-        const marker = new mapboxgl.Marker({
-          color: getMarkerColor(location.type)
-        })
-          .setLngLat(location.coordinates)
-          .setPopup(popup)
-          .addTo(map.current)
-
-        marker.getElement().addEventListener('click', () => {
-          setSelectedLocation(location)
-        })
-      })
-    })
   }, [])
 
-  const getMarkerColor = (type) => {
-    const colors = {
-      student_center: '#FF0000',
-      library: '#0000FF',
-      arts: '#800080',
-      dining: '#FFA500',
-      academic: '#008000'
+  const createPopupContent = (feature) => {
+    const properties = feature.properties;
+    if (!properties) return null;
+
+    let content = `
+      <div class="p-4 max-w-sm">
+        <h3 class="font-bold text-lg mb-2 text-red-800">${properties.name || 'Unnamed Location'}</h3>`;
+
+    if (properties.location) {
+      content += `<p class="text-sm mb-2 text-gray-600">${properties.location}</p>`;
     }
-    return colors[type] || '#000000'
-  }
+
+    if (properties.departments && Array.isArray(properties.departments)) {
+      content += `
+        <div class="text-sm mb-3">
+          <div class="font-semibold mb-1">Departments:</div>
+          <ul class="list-disc pl-4">
+            ${properties.departments.map(dept => `<li>${dept}</li>`).join('')}
+          </ul>
+        </div>`;
+    }
+
+    if (properties.notes) {
+      content += `
+        <div class="text-sm mb-3">
+          <div class="font-semibold mb-1">Notes:</div>
+          <p class="text-gray-700">${properties.notes}</p>
+        </div>`;
+    }
+
+    if (properties.additional_info_link) {
+      content += `
+        <div class="text-sm mb-2">
+          <a href="${properties.additional_info_link}" target="_blank" class="text-blue-600 hover:text-blue-800 underline">
+            More Information
+          </a>
+        </div>`;
+    }
+
+    if (properties.hours) {
+      content += `<div class="text-sm mb-3">
+        <div class="font-semibold mb-1">Hours:</div>`;
+      
+      if (typeof properties.hours === 'object') {
+        Object.entries(properties.hours).forEach(([day, times]) => {
+          const formattedDay = day
+            .split('-')
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+            .join('-');
+          
+          content += `<div class="mb-1">
+            <span class="font-medium">${formattedDay}:</span>
+            <span class="pl-2">${times}</span>
+          </div>`;
+        });
+      } else {
+        content += `<div class="pl-2">${properties.hours}</div>`;
+      }
+      
+      content += `</div>`;
+    }
+
+    if (properties.features && Array.isArray(properties.features)) {
+      content += `
+        <div class="text-sm mb-3">
+          <div class="font-semibold mb-1">Features:</div>
+          <ul class="list-disc pl-4">
+            ${properties.features.map(feature => `<li>${feature}</li>`).join('')}
+          </ul>
+        </div>`;
+    }
+
+    content += '</div>';
+    return content;
+  };
 
   const handleSearch = () => {
-    const location = campusLocations.find(loc => 
-      loc.name.toLowerCase().includes(searchQuery.toLowerCase())
+    const features = map.current.queryRenderedFeatures()
+    const location = features.find(feature => 
+      feature.properties?.name?.toLowerCase().includes(searchQuery.toLowerCase())
     )
+    
     if (location) {
       setSelectedLocation(location)
       map.current.flyTo({
-        center: location.coordinates,
+        center: location.geometry.coordinates,
         zoom: 17
       })
+      
+      popup.current
+        .setLngLat(location.geometry.coordinates)
+        .setHTML(createPopupContent(location))
+        .addTo(map.current)
     }
   }
 
-  const handleRoute = () => {
-    // Implement routing functionality here
-    console.log('Routing to selected location')
+  const handleFeatureClick = (e) => {
+    const feature = e.features[0];
+    if (!feature) return;
+
+    if (popup.current) {
+      popup.current.remove();
+    }
+
+    popup.current = new mapboxgl.Popup({
+      closeButton: true,
+      closeOnClick: true,
+      className: 'custom-popup',
+      maxWidth: '300px',
+      offset: [15, 0]
+    })
+      .setLngLat(feature.geometry.coordinates)
+      .setHTML(createPopupContent(feature))
+      .addTo(map.current);
   }
 
+  useEffect(() => {
+    if (!map.current) return;
+
+    map.current.on('click', 'dining-points', handleFeatureClick);
+    map.current.on('click', 'study-points', handleFeatureClick);
+    map.current.on('click', 'lecture-points', handleFeatureClick);
+    map.current.on('click', 'parking-points', handleFeatureClick);
+
+    return () => {
+      if (map.current) {
+        map.current.off('click', 'dining-points', handleFeatureClick);
+        map.current.off('click', 'study-points', handleFeatureClick);
+        map.current.off('click', 'lecture-points', handleFeatureClick);
+        map.current.off('click', 'parking-points', handleFeatureClick);
+      }
+    };
+  }, []);
+
   return (
-    <div className="flex h-screen">
-      <div className="w-1/4 p-4 bg-white shadow-lg z-10">
-        <h1 className="text-2xl font-bold mb-4 text-red-800">RPInSight</h1>
-        <div className="flex mb-4">
-          <Input
-            type="text"
-            placeholder="Search campus locations..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="flex-grow mr-2"
-          />
-          <Button onClick={handleSearch}>
-            <Search className="h-4 w-4" />
-          </Button>
+    <div className="flex flex-col h-screen">
+      <div className="flex flex-grow">
+        <div className="w-1/4 p-4 bg-gradient-to-b from-white to-gray-50 shadow-lg z-10">
+          <div className="flex items-center justify-start mb-4">
+            <Image
+              src="/logov1.png"
+              alt="RPI Logo"
+              width={100}
+              height={40}
+              className="object-contain"
+            />
+          </div>
+          <div className="flex mb-4">
+            <Input
+              type="text"
+              placeholder="Search campus locations..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="flex-grow mr-2 transition-all duration-200 hover:shadow-md focus:shadow-md"
+            />
+            <Button 
+              onClick={handleSearch}
+              className="bg-gradient-to-r from-red-900 to-red-700 hover:from-red-800 hover:to-red-600 transition-all duration-200"
+            >
+              <Search className="h-4 w-4 text-white" />
+            </Button>
+          </div>
         </div>
-        {selectedLocation && (
-          <Card>
-            <CardHeader>
-              <CardTitle>{selectedLocation.name}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="mb-2">{selectedLocation.description}</p>
-              <p className="text-sm text-gray-500 mb-4">Type: {selectedLocation.type}</p>
-              <p className="text-sm">Coordinates: {selectedLocation.coordinates.join(', ')}</p>
-              <Button onClick={handleRoute} className="mt-4">
-                <Map className="h-4 w-4 mr-2" />
-                Route Here
-              </Button>
-            </CardContent>
-          </Card>
-        )}
+        <div ref={mapContainer} className="flex-grow" />
       </div>
-      <div ref={mapContainer} className="flex-grow" />
+      <footer className="h-[27px] bg-gradient-to-r from-red-900 to-red-700 text-white text-xs flex items-center justify-between px-4">
+        <span>© 2024 Tazeem Mahashin, RPInSights</span>
+        <span className="text-gray-200">Troy, NY 12180</span>
+      </footer>
     </div>
   )
 }
