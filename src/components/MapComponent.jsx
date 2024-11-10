@@ -13,6 +13,8 @@ import lectureHalls from '@/data/lecture_halls.geojson';
 import studyHalls from '@/data/study_halls.geojson';
 import diningHalls from '@/data/dining_halls.geojson';
 import parkingLots from '@/data/parking.geojson';
+import PuckmanChat from '@/components/PuckmanChat'
+import PuckmanAvatar from '@/components/PuckmanAvatar'
 
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN
 
@@ -29,6 +31,7 @@ export default function MapComponent() {
   const [selectedLocation, setSelectedLocation] = useState(null)
   const currentMarker = useRef(null)
   const [mapInstance, setMapInstance] = useState(null)
+  const [puckmanState, setPuckmanState] = useState('STANDARD')
 
   useEffect(() => {
     if (map.current) return;
@@ -264,22 +267,33 @@ export default function MapComponent() {
     <div className="flex flex-col h-screen">
       <div className="flex flex-grow">
         <div className="w-1/4 p-4 bg-gradient-to-b from-white to-gray-50 shadow-lg z-10">
-          <div className="flex items-center justify-start mb-4">
+          <div className="flex flex-col items-center justify-start">
             <Image
               src="/logov1.png"
               alt="RPI Logo"
               width={100}
               height={40}
-              className="object-contain"
+              className="object-contain mb-4"
+            />
+            <PuckmanAvatar 
+              state={puckmanState} 
+              onClick={() => {
+                // Focus the search input when Puckman is clicked
+                const searchInput = document.querySelector('textarea');
+                if (searchInput) searchInput.focus();
+              }}
             />
           </div>
-          <SearchBar 
-            map={mapInstance}
-            onSearch={(location) => {
-              console.log('Search callback received location:', location);
-              setSearchQuery(location?.properties?.name || '');
-            }} 
-          />
+          <div className="mt-4">
+            <SearchBar 
+              map={mapInstance}
+              onSearch={(location) => {
+                console.log('Search callback received location:', location);
+                setSearchQuery(location?.properties?.name || '');
+              }}
+              onPuckmanStateChange={setPuckmanState}
+            /> 
+          </div>
         </div>
         <div ref={mapContainer} className="flex-grow" />
       </div>

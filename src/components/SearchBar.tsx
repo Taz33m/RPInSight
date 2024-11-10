@@ -8,6 +8,7 @@ import TransportModeSelector from './TransportModeSelector';
 interface SearchBarProps {
   map: mapboxgl.Map | null;
   onSearch: (location: any) => void;
+  onPuckmanStateChange: (state: 'STANDARD' | 'HAPPY' | 'IDEA' | 'CONFUSED') => void;
 }
 
 interface AIResponse {
@@ -16,7 +17,7 @@ interface AIResponse {
   coordinates: [number, number] | null;
 }
 
-const SearchBar: React.FC<SearchBarProps> = ({ map, onSearch }) => {
+const SearchBar: React.FC<SearchBarProps> = ({ map, onSearch, onPuckmanStateChange }) => {
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [suggestions, setSuggestions] = useState<any[]>([]);
@@ -47,8 +48,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ map, onSearch }) => {
     if (!query.trim()) return;
     
     setLoading(true);
-    clearMarker();
-    console.log('Starting search...', { mapAvailable: !!map });
+    onPuckmanStateChange('CONFUSED');
 
     try {
       const response = await fetch('/api/search', {
@@ -58,7 +58,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ map, onSearch }) => {
         },
         body: JSON.stringify({ 
           query,
-          userLocation: userLocationRef.current 
+          userLocation: userLocationRef.current
         }),
       });
 
@@ -67,59 +67,56 @@ const SearchBar: React.FC<SearchBarProps> = ({ map, onSearch }) => {
       }
 
       const data = await response.json();
-      console.log('Search response data:', data);
+      console.log('AI Response:', data);
+      
+      setAiResponse(data);
+      onSearch(data);
+      onPuckmanStateChange('HAPPY');
 
-      if (!map) {
-        console.error('Map instance not available');
-        throw new Error('Map not initialized');
+      // If coordinates are available, update the map
+      if (data.coordinates) {
+        const [lng, lat] = data.coordinates;
+        
+        // Clear existing marker
+        if (markerRef.current) {
+          markerRef.current.remove();
+        }
+        
+        // Create marker with different styling based on confidence
+        markerRef.current = new mapboxgl.Marker({
+          color: data.confidence === 'exact' ? "#C41E3A" : "#FFA07A",
+          scale: data.confidence === 'exact' ? 1.2 : 0.9,
+          draggable: data.confidence === 'approximate'
+        })
+          .setLngLat([lng, lat])
+          .addTo(map!);
+
+        // Add popup for approximate locations
+        if (data.confidence === 'approximate') {
+          new mapboxgl.Popup({
+            offset: 25,
+            closeButton: false,
+            closeOnClick: true
+          })
+            .setLngLat([lng, lat])
+            .setHTML('<div class="text-sm">Approximate location</div>')
+            .addTo(map!);
+        }
+
+        // Fly to location
+        map?.flyTo({
+          center: [lng, lat],
+          zoom: data.confidence === 'exact' ? 17 : 16,
+          essential: true
+        });
       }
-
-      if (!data.coordinates) {
-        console.error('No coordinates in response');
-        throw new Error('No coordinates found');
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error('Search error:', error.message);
+      } else {
+        console.error('Search error:', String(error));
       }
-
-      // Update AI response state
-      setAiResponse({
-        content: typeof data.content === 'object' ? JSON.stringify(data.content) : data.content,
-        buildingName: data.buildingName,
-        coordinates: data.coordinates
-      });
-
-      console.log('Creating marker with:', {
-        map: !!map,
-        coordinates: data.coordinates
-      });
-
-      // Create new marker
-      const marker = new mapboxgl.Marker({
-        color: "#C41E3A",
-        scale: 1.2
-      })
-        .setLngLat(data.coordinates)
-        .addTo(map);
-
-      markerRef.current = marker;
-
-      // Fly to location
-      map.flyTo({
-        center: data.coordinates,
-        zoom: 17,
-        duration: 2000
-      });
-
-      // Check if we should show transport modes
-      if (userLocationRef.current) {
-        setShowTransportModes(true);
-      }
-
-    } catch (error) {
-      console.error('Search error:', error);
-      setAiResponse({
-        content: 'Sorry, I encountered an error processing your request.',
-        buildingName: '',
-        coordinates: null
-      });
+      onPuckmanStateChange('CONFUSED');
     } finally {
       setLoading(false);
     }
@@ -200,8 +197,12 @@ const SearchBar: React.FC<SearchBarProps> = ({ map, onSearch }) => {
 
       // Remove existing route layer if any
       if (routeLayer && map) {
-        map.removeLayer(routeLayer);
-        map.removeSource(routeLayer);
+        if (map.getLayer(routeLayer)) {
+          map.removeLayer(routeLayer);
+        }
+        if (map.getSource(routeLayer)) {
+          map.removeSource(routeLayer);
+        }
       }
 
       // Add the new route layer
@@ -258,8 +259,14 @@ const SearchBar: React.FC<SearchBarProps> = ({ map, onSearch }) => {
   useEffect(() => {
     return () => {
       if (map && routeLayer) {
-        map.removeLayer(routeLayer);
-        map.removeSource(routeLayer);
+        // Check if layer exists before removing
+        if (map.getLayer(routeLayer)) {
+          map.removeLayer(routeLayer);
+        }
+        // Check if source exists before removing
+        if (map.getSource(routeLayer)) {
+          map.removeSource(routeLayer);
+        }
       }
     };
   }, [map, routeLayer]);
@@ -358,20 +365,10 @@ const SearchBar: React.FC<SearchBarProps> = ({ map, onSearch }) => {
         </div>
       )}
 
-      {/* Add debug info in development */}
-      {process.env.NODE_ENV === 'development' && (
-        <div className="text-xs text-gray-500 mt-2">
-          Debug: ShowTransportModes: {showTransportModes.toString()} | 
-          Has Coordinates: {Boolean(aiResponse?.coordinates).toString()} |
-          Has User Location: {Boolean(userLocationRef.current).toString()}
-        </div>
-      )}
-
       {showTransportModes && aiResponse?.coordinates && (
         <TransportModeSelector
           selectedMode={selectedMode}
           onModeChange={(mode) => {
-            console.log('Transport mode selected:', mode);
             setSelectedMode(mode);
             fetchAndDisplayRoute(mode);
           }}
@@ -382,3 +379,4 @@ const SearchBar: React.FC<SearchBarProps> = ({ map, onSearch }) => {
 };
 
 export default SearchBar;
+

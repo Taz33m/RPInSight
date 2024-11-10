@@ -46,6 +46,54 @@ function calculateDistance(
   return R * c; // Distance in meters
 }
 
+// Add this helper function at the top of the file
+function findBestLocationMatch(buildingName: string): [number, number] | null {
+  // First check exact matches in our datasets
+  const exactMatch = allLocations.find(loc => 
+    loc.properties.name.toLowerCase() === buildingName.toLowerCase()
+  );
+  if (exactMatch) {
+    return exactMatch.geometry.coordinates as [number, number];
+  }
+
+  // Check known locations
+  if (knownLocations[buildingName]) {
+    return knownLocations[buildingName];
+  }
+
+  // Try fuzzy matching
+  const fuzzyMatch = allLocations.find(loc => 
+    loc.properties.name.toLowerCase().includes(buildingName.toLowerCase()) ||
+    buildingName.toLowerCase().includes(loc.properties.name.toLowerCase())
+  );
+  if (fuzzyMatch) {
+    return fuzzyMatch.geometry.coordinates as [number, number];
+  }
+
+  // Fallback to approximate campus areas
+  const approximateLocations: Record<string, [number, number]> = {
+    "freshman hill": [-73.6766, 42.7298],
+    "academic": [-73.6784, 42.7307],
+    "north": [-73.6777, 42.7321],
+    "east": [-73.6674, 42.7314],
+    "west": [-73.6820, 42.7318],
+    "south": [-73.6792, 42.7273],
+    "commons": [-73.6740, 42.7273],
+    "union": [-73.6766, 42.7299],
+    "sage": [-73.6808, 42.7307],
+    "library": [-73.6825, 42.7294]
+  };
+
+  // Check if query contains any of our approximate areas
+  for (const [area, coords] of Object.entries(approximateLocations)) {
+    if (buildingName.toLowerCase().includes(area)) {
+      return coords;
+    }
+  }
+
+  return null;
+}
+
 export async function POST(request: Request) {
   try {
     const { query: originalQuery, userLocation } = await request.json();
@@ -156,18 +204,20 @@ export async function POST(request: Request) {
       }, { status: 500 });
     }
 
-    // Fix: Find location before using it
-    const location = allLocations.find(loc => 
-      loc.properties.name.toLowerCase() === aiResponse.buildingName.toLowerCase()
-    );
+    // Replace the existing return statement with this enhanced version
+    const coordinates = findBestLocationMatch(aiResponse.buildingName);
 
-    // Ensure we're returning string values, not objects
     return NextResponse.json({
       content: typeof aiResponse.description === 'object' 
         ? JSON.stringify(aiResponse.description) 
         : aiResponse.description,
       buildingName: aiResponse.buildingName,
-      coordinates: location?.geometry.coordinates || knownLocations[aiResponse.buildingName] || null
+      coordinates: coordinates,
+      confidence: coordinates ? (
+        knownLocations[aiResponse.buildingName] ? 'exact' :
+        allLocations.some(loc => loc.properties.name === aiResponse.buildingName) ? 'exact' :
+        'approximate'
+      ) : null
     });
 
   } catch (error) {

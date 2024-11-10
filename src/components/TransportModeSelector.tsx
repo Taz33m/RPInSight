@@ -17,7 +17,11 @@ const TransportModeSelector: React.FC<TransportModeSelectorProps> = ({
         variant={selectedMode === 'walking' ? 'default' : 'outline'}
         size="sm"
         onClick={() => onModeChange('walking')}
-        className={selectedMode === 'walking' ? 'bg-red-800 hover:bg-red-700' : ''}
+        className={`${
+          selectedMode === 'walking' 
+            ? 'bg-red-800 hover:bg-red-700' 
+            : 'hover:bg-red-800 hover:text-white'
+        } text-white`}
       >
         <Footprints className="h-4 w-4 mr-1" />
         Walk
@@ -26,7 +30,11 @@ const TransportModeSelector: React.FC<TransportModeSelectorProps> = ({
         variant={selectedMode === 'cycling' ? 'default' : 'outline'}
         size="sm"
         onClick={() => onModeChange('cycling')}
-        className={selectedMode === 'cycling' ? 'bg-red-800 hover:bg-red-700' : ''}
+        className={`${
+          selectedMode === 'cycling' 
+            ? 'bg-red-800 hover:bg-red-700' 
+            : 'hover:bg-red-800 hover:text-white'
+        } text-white`}
       >
         <Bike className="h-4 w-4 mr-1" />
         Bike
@@ -35,7 +43,11 @@ const TransportModeSelector: React.FC<TransportModeSelectorProps> = ({
         variant={selectedMode === 'driving' ? 'default' : 'outline'}
         size="sm"
         onClick={() => onModeChange('driving')}
-        className={selectedMode === 'driving' ? 'bg-red-800 hover:bg-red-700' : ''}
+        className={`${
+          selectedMode === 'driving' 
+            ? 'bg-red-800 hover:bg-red-700' 
+            : 'hover:bg-red-800 hover:text-white'
+        } text-white`}
       >
         <Car className="h-4 w-4 mr-1" />
         Drive
