@@ -162,25 +162,19 @@ const SearchBar: React.FC<SearchBarProps> = ({ map, onSearch }) => {
   };
 
   const fetchAndDisplayRoute = async (mode: 'walking' | 'cycling' | 'driving') => {
-    if (!userLocationRef.current) {
-      const shouldGetLocation = window.confirm(
-        'This feature requires your location. Would you like to enable location services?'
-      );
-      
-      if (shouldGetLocation) {
-        requestUserLocation();
-        return;
-      } else {
-        return;
-      }
-    }
-
-    if (!aiResponse?.coordinates) {
+    if (!userLocationRef.current || !aiResponse?.coordinates) {
+      alert('Please enable location services to see directions');
       return;
     }
 
     setLoading(true);
     try {
+      console.log('Fetching route with:', {
+        origin: userLocationRef.current,
+        destination: aiResponse.coordinates,
+        mode
+      });
+
       const response = await fetch('/api/directions', {
         method: 'POST',
         headers: {
@@ -193,7 +187,16 @@ const SearchBar: React.FC<SearchBarProps> = ({ map, onSearch }) => {
         }),
       });
 
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
       const data = await response.json();
+      console.log('Route data received:', data);
+
+      if (data.error) {
+        throw new Error(data.error);
+      }
 
       // Remove existing route layer if any
       if (routeLayer && map) {
@@ -203,17 +206,22 @@ const SearchBar: React.FC<SearchBarProps> = ({ map, onSearch }) => {
 
       // Add the new route layer
       const routeId = `route-${Date.now()}`;
-      map?.addLayer({
-        id: routeId,
-        type: 'line',
-        source: {
+      
+      if (!map.getSource(routeId)) {
+        map.addSource(routeId, {
           type: 'geojson',
           data: {
             type: 'Feature',
             properties: {},
             geometry: data.routes[0].geometry
           }
-        },
+        });
+      }
+
+      map.addLayer({
+        id: routeId,
+        type: 'line',
+        source: routeId,
         layout: {
           'line-join': 'round',
           'line-cap': 'round'
@@ -227,13 +235,14 @@ const SearchBar: React.FC<SearchBarProps> = ({ map, onSearch }) => {
 
       setRouteLayer(routeId);
 
-      // Fit the map to show both points
-      const bounds = new mapboxgl.LngLatBounds()
-        .extend(userLocationRef.current)
-        .extend(aiResponse.coordinates);
+      // Fit the map to show the entire route
+      const coordinates = data.routes[0].geometry.coordinates;
+      const bounds = coordinates.reduce((bounds, coord) => {
+        return bounds.extend(coord);
+      }, new mapboxgl.LngLatBounds(coordinates[0], coordinates[0]));
 
-      map?.fitBounds(bounds, {
-        padding: 100,
+      map.fitBounds(bounds, {
+        padding: 50,
         duration: 1000
       });
 

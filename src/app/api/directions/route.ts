@@ -16,10 +16,33 @@ export async function POST(request: Request) {
                    mode === 'driving' ? 'driving-traffic' : 
                    'walking';
 
-    const url = `https://api.mapbox.com/directions/v5/mapbox/${profile}/${origin[0]},${origin[1]};${destination[0]},${destination[1]}`;
+    // Construct the URL with all required parameters
+    const url = new URL(`https://api.mapbox.com/directions/v5/mapbox/${profile}/${origin[0]},${origin[1]};${destination[0]},${destination[1]}`);
     
-    const response = await fetch(`${url}?geometries=geojson&access_token=${MAPBOX_ACCESS_TOKEN}`);
+    // Add required query parameters
+    url.searchParams.append('geometries', 'geojson');
+    url.searchParams.append('access_token', MAPBOX_ACCESS_TOKEN!);
+    url.searchParams.append('overview', 'full');
+    url.searchParams.append('steps', 'true');
+
+    console.log('Fetching directions from:', url.toString());
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Mapbox API error: ${response.status} ${response.statusText}`);
+    }
+
     const data = await response.json();
+
+    if (!data.routes || data.routes.length === 0) {
+      throw new Error('No route found');
+    }
 
     return NextResponse.json(data);
   } catch (error) {
