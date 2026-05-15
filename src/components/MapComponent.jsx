@@ -1,20 +1,12 @@
 'use client'
 
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import mapboxgl from 'mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
-import { Search, Map } from 'lucide-react'
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import Image from 'next/image'
 import SearchBar from '@/components/SearchBar'
-import lectureHalls from '@/data/lecture_halls.geojson';
-import studyHalls from '@/data/study_halls.geojson';
-import diningHalls from '@/data/dining_halls.geojson';
-import parkingLots from '@/data/parking.geojson';
-import PuckmanChat from '@/components/PuckmanChat'
 import PuckmanAvatar from '@/components/PuckmanAvatar'
+import DataMethodologyPanel from '@/components/DataMethodologyPanel'
 
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN
 
@@ -27,85 +19,10 @@ export default function MapComponent() {
   const mapContainer = useRef(null)
   const map = useRef(null)
   const popup = useRef(null)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [selectedLocation, setSelectedLocation] = useState(null)
-  const currentMarker = useRef(null)
   const [mapInstance, setMapInstance] = useState(null)
   const [puckmanState, setPuckmanState] = useState('STANDARD')
 
-  useEffect(() => {
-    if (map.current) return;
-
-    map.current = new mapboxgl.Map({
-      container: mapContainer.current,
-      style: process.env.NEXT_PUBLIC_MAPBOX_STYLE_URL,
-      center: campusCenter,
-      zoom: 15,
-      fadeDuration: 250,
-      crossSourceCollisions: true
-    })
-
-    popup.current = new mapboxgl.Popup({
-      closeButton: true,
-      closeOnClick: true,
-      className: 'custom-popup',
-      maxWidth: '300px',
-      offset: [15, 0]
-    })
-
-    map.current.on('load', () => {
-      map.current.on('click', (e) => {
-        const features = map.current.queryRenderedFeatures(e.point)
-        
-        if (!features.length) {
-          popup.current.remove()
-          return
-        }
-
-        const feature = features[0]
-        const coordinates = feature.geometry.coordinates.slice()
-        
-        while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
-          coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360
-        }
-        
-        const popupContent = createPopupContent(feature)
-        
-        if (popupContent) {
-          popup.current
-            .setLngLat(coordinates)
-            .setHTML(popupContent)
-            .addTo(map.current)
-        }
-      })
-
-      map.current.on('mouseenter', (e) => {
-        const features = map.current.queryRenderedFeatures(e.point)
-        if (features.length) {
-          map.current.getCanvas().style.cursor = 'pointer'
-        }
-      })
-
-      map.current.on('mouseleave', () => {
-        map.current.getCanvas().style.cursor = ''
-      })
-
-      console.log('Map loaded, setting instance');
-      setMapInstance(map.current);
-    })
-
-    map.current.addControl(new mapboxgl.NavigationControl(), 'top-right')
-    map.current.addControl(
-      new mapboxgl.GeolocateControl({
-        positionOptions: {
-          enableHighAccuracy: true
-        },
-        trackUserLocation: true
-      })
-    )
-  }, [])
-
-  const createPopupContent = (feature) => {
+  const createPopupContent = useCallback((feature) => {
     const properties = feature.properties;
     if (!properties) return null;
 
@@ -188,44 +105,81 @@ export default function MapComponent() {
 
     content += '</div>';
     return content;
-  };
+  }, []);
 
-  const handleSearch = () => {
-    const features = map.current.queryRenderedFeatures();
-    const location = features.find(feature => 
-      feature.properties?.name?.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-    
-    if (location) {
-      setSelectedLocation(location);
-      
-      // Create new marker
-      if (currentMarker.current) {
-        currentMarker.current.remove();
-      }
-      
-      currentMarker.current = new mapboxgl.Marker({
-        color: "#C41E3A",
-        scale: 1.2
+  useEffect(() => {
+    if (map.current) return;
+
+    map.current = new mapboxgl.Map({
+      container: mapContainer.current,
+      style: process.env.NEXT_PUBLIC_MAPBOX_STYLE_URL,
+      center: campusCenter,
+      zoom: 15,
+      fadeDuration: 250,
+      crossSourceCollisions: true
+    })
+
+    popup.current = new mapboxgl.Popup({
+      closeButton: true,
+      closeOnClick: true,
+      className: 'custom-popup',
+      maxWidth: '300px',
+      offset: [15, 0]
+    })
+
+    map.current.on('load', () => {
+      map.current.on('click', (e) => {
+        const features = map.current.queryRenderedFeatures(e.point)
+        
+        if (!features.length) {
+          popup.current.remove()
+          return
+        }
+
+        const feature = features[0]
+        const coordinates = feature.geometry.coordinates.slice()
+        
+        while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
+          coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360
+        }
+        
+        const popupContent = createPopupContent(feature)
+        
+        if (popupContent) {
+          popup.current
+            .setLngLat(coordinates)
+            .setHTML(popupContent)
+            .addTo(map.current)
+        }
       })
-        .setLngLat(location.geometry.coordinates)
-        .addTo(map.current);
 
-      // Fly to location
-      map.current.flyTo({
-        center: location.geometry.coordinates,
-        zoom: 17
-      });
-      
-      // Show popup
-      popup.current
-        .setLngLat(location.geometry.coordinates)
-        .setHTML(createPopupContent(location))
-        .addTo(map.current);
-    }
-  }
+      map.current.on('mouseenter', (e) => {
+        const features = map.current.queryRenderedFeatures(e.point)
+        if (features.length) {
+          map.current.getCanvas().style.cursor = 'pointer'
+        }
+      })
 
-  const handleFeatureClick = (e) => {
+      map.current.on('mouseleave', () => {
+        map.current.getCanvas().style.cursor = ''
+      })
+
+      console.log('Map loaded, setting instance');
+      setMapInstance(map.current);
+    })
+
+    map.current.addControl(new mapboxgl.NavigationControl(), 'top-right')
+    map.current.addControl(
+      new mapboxgl.GeolocateControl({
+        positionOptions: {
+          enableHighAccuracy: true
+        },
+        trackUserLocation: true
+      })
+    )
+  }, [createPopupContent])
+
+  const handleFeatureClick = useCallback((e) => {
     const feature = e.features[0];
     if (!feature) return;
 
@@ -243,7 +197,7 @@ export default function MapComponent() {
       .setLngLat(feature.geometry.coordinates)
       .setHTML(createPopupContent(feature))
       .addTo(map.current);
-  }
+  }, [createPopupContent])
 
   useEffect(() => {
     if (!map.current) return;
@@ -261,7 +215,7 @@ export default function MapComponent() {
         map.current.off('click', 'parking-points', handleFeatureClick);
       }
     };
-  }, []);
+  }, [handleFeatureClick]);
 
   return (
     <div className="flex flex-col h-screen">
@@ -289,11 +243,11 @@ export default function MapComponent() {
               map={mapInstance}
               onSearch={(location) => {
                 console.log('Search callback received location:', location);
-                setSearchQuery(location?.properties?.name || '');
               }}
               onPuckmanStateChange={setPuckmanState}
             /> 
           </div>
+          <DataMethodologyPanel />
         </div>
         <div ref={mapContainer} className="flex-grow" />
       </div>

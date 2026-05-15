@@ -6,9 +6,17 @@ import studyHalls from '@/data/study_halls.geojson';
 import parkingLots from '@/data/parking.geojson';
 import lectureHalls from '@/data/lecture_halls.geojson';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-});
+let openaiClient: OpenAI | null = null;
+
+function getOpenAIClient() {
+  if (!openaiClient) {
+    openaiClient = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY
+    });
+  }
+
+  return openaiClient;
+}
 
 // Combine all location data
 const allLocations = [
@@ -140,7 +148,7 @@ export async function POST(request: Request) {
       processedQuery += ` - Nearest locations are: ${nearestLocations.join(', ')}`;
     }
 
-    const completion = await openai.chat.completions.create({
+    const completion = await getOpenAIClient().chat.completions.create({
       model: "gpt-4-turbo-preview",
       messages: [
         {

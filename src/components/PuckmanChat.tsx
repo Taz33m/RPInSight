@@ -6,15 +6,20 @@ import { Loader2 } from 'lucide-react';
 
 interface PuckmanChatProps {
   map: mapboxgl.Map | null;
-  onSearch: (location: any) => void;
+  onSearch: (location: SearchResult) => void;
 }
 
-const PuckmanChat: React.FC<PuckmanChatProps> = ({ map, onSearch }) => {
+interface SearchResult {
+  content?: string;
+  buildingName?: string;
+  coordinates?: [number, number] | null;
+}
+
+const PuckmanChat: React.FC<PuckmanChatProps> = ({ onSearch }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [puckmanState, setPuckmanState] = useState<'STANDARD' | 'HAPPY' | 'IDEA' | 'CONFUSED'>('STANDARD');
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
-  const [aiResponse, setAiResponse] = useState<any>(null);
 
   const handlePuckmanClick = () => {
     setIsOpen(!isOpen);
@@ -37,7 +42,6 @@ const PuckmanChat: React.FC<PuckmanChatProps> = ({ map, onSearch }) => {
       });
 
       const data = await response.json();
-      setAiResponse(data);
       onSearch(data);
       setPuckmanState('HAPPY');
     } catch (error) {

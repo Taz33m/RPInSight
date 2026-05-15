@@ -2,6 +2,7 @@
   "name": "rpinsight",
   "version": "0.1.0",
   "private": true,
+  "description": "AI-assisted RPI campus map with curated geospatial data, campus search, and Mapbox directions.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

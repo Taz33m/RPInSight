@@ -5,7 +5,8 @@ const inter = Inter({ subsets: ['latin'] })
 
 export const metadata = {
   title: 'RPInSight',
-  description: 'RPI Campus Navigation and Information Hub',
+  description:
+    'AI-assisted RPI campus navigation with curated geospatial location data, Mapbox routing, and campus search.',
 }
 
 export default function RootLayout({

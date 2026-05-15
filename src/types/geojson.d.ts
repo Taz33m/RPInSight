@@ -1,4 +1,22 @@
 declare module '*.geojson' {
-    const value: any;
-    export default value;
-  }
+  type CampusGeometry = {
+    type: string;
+    coordinates: [number, number];
+  };
+
+  type CampusFeature = {
+    type: 'Feature';
+    geometry: CampusGeometry;
+    properties: {
+      name: string;
+      [key: string]: unknown;
+    };
+  };
+
+  const value: {
+    type: 'FeatureCollection';
+    features: CampusFeature[];
+  };
+
+  export default value;
+}

@@ -7,7 +7,7 @@ import TransportModeSelector from './TransportModeSelector';
 
 interface SearchBarProps {
   map: mapboxgl.Map | null;
-  onSearch: (location: any) => void;
+  onSearch: (location: AIResponse) => void;
   onPuckmanStateChange: (state: 'STANDARD' | 'HAPPY' | 'IDEA' | 'CONFUSED') => void;
 }
 
@@ -15,12 +15,21 @@ interface AIResponse {
   content: string;
   buildingName: string;
   coordinates: [number, number] | null;
+  confidence?: 'exact' | 'approximate' | null;
+}
+
+interface DirectionsResponse {
+  routes: Array<{
+    geometry: {
+      type: 'LineString';
+      coordinates: [number, number][];
+    };
+  }>;
 }
 
 const SearchBar: React.FC<SearchBarProps> = ({ map, onSearch, onPuckmanStateChange }) => {
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
-  const [suggestions, setSuggestions] = useState<any[]>([]);
   const [aiResponse, setAiResponse] = useState<AIResponse | null>(null);
   const [showTransportModes, setShowTransportModes] = useState(false);
   const [selectedMode, setSelectedMode] = useState<'walking' | 'cycling' | 'driving'>('walking');
@@ -66,7 +75,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ map, onSearch, onPuckmanStateChan
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const data = await response.json();
+      const data = await response.json() as AIResponse;
       console.log('AI Response:', data);
       
       setAiResponse(data);
@@ -129,7 +138,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ map, onSearch, onPuckmanStateChan
       hasCoordinates: aiResponse?.coordinates !== null,
       userLocation: userLocationRef.current
     });
-  }, [showTransportModes, aiResponse, userLocationRef.current]);
+  }, [showTransportModes, aiResponse]);
 
   // Cleanup marker when component unmounts
   useEffect(() => {
@@ -159,7 +168,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ map, onSearch, onPuckmanStateChan
   };
 
   const fetchAndDisplayRoute = async (mode: 'walking' | 'cycling' | 'driving') => {
-    if (!userLocationRef.current || !aiResponse?.coordinates) {
+    if (!map || !userLocationRef.current || !aiResponse?.coordinates) {
       alert('Please enable location services to see directions');
       return;
     }
@@ -188,7 +197,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ map, onSearch, onPuckmanStateChan
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const data = await response.json();
+      const data = await response.json() as DirectionsResponse & { error?: string };
       console.log('Route data received:', data);
 
       if (data.error) {
@@ -238,7 +247,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ map, onSearch, onPuckmanStateChan
 
       // Fit the map to show the entire route
       const coordinates = data.routes[0].geometry.coordinates;
-      const bounds = coordinates.reduce((bounds, coord) => {
+      const bounds = coordinates.reduce((bounds: mapboxgl.LngLatBounds, coord: [number, number]) => {
         return bounds.extend(coord);
       }, new mapboxgl.LngLatBounds(coordinates[0], coordinates[0]));
 
@@ -297,17 +306,6 @@ const SearchBar: React.FC<SearchBarProps> = ({ map, onSearch, onPuckmanStateChan
         console.log('Location tracking started');
       });
 
-      // Check if location is already available
-      if (geolocateControl._watchState === 'ACTIVE') {
-        const position = geolocateControl._accuratePosition;
-        if (position) {
-          userLocationRef.current = [position.coords.longitude, position.coords.latitude];
-          console.log('Retrieved existing user location:', userLocationRef.current);
-          if (aiResponse?.coordinates) {
-            setShowTransportModes(true);
-          }
-        }
-      }
     }
   }, [map, aiResponse]);
 
@@ -379,4 +377,3 @@ const SearchBar: React.FC<SearchBarProps> = ({ map, onSearch, onPuckmanStateChan
 };
 
 export default SearchBar;
-
