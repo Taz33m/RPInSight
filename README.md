@@ -1,6 +1,6 @@
 # RPInSight
 
-AI-assisted campus navigation for Rensselaer Polytechnic Institute. RPInSight combines a Mapbox campus map, curated GeoJSON location layers, directions, and a Puckman search assistant for finding dining, study, lecture, and parking locations around campus.
+AI-assisted campus navigation for Rensselaer Polytechnic Institute. RPInSight combines a Mapbox campus map, curated GeoJSON location layers, directions, and a campus search assistant for finding dining, study, lecture, and parking locations around campus.
 
 ## What It Shows
 
@@ -9,6 +9,8 @@ AI-assisted campus navigation for Rensselaer Polytechnic Institute. RPInSight co
 - AI-assisted search through `/api/search`, grounded in the local campus dataset before falling back to known RPI locations.
 - Walking, cycling, and driving directions through `/api/directions`.
 - A small data QA surface that links to the public QGIS portfolio project as evidence of geospatial data production and review workflow.
+
+RPInSight is supporting evidence for the QGIS portfolio, not the main QGIS proof. It shows Mapbox, GeoJSON, route UX, and location-aware AI search in a product setting.
 
 ## Data Layers
 

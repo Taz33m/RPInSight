@@ -60,7 +60,7 @@ const PuckmanChat: React.FC<PuckmanChatProps> = ({ onSearch }) => {
       >
         <Image
           src={`/${puckmanState}.png`}
-          alt="Puckman"
+          alt="Campus search assistant"
           width={100}
           height={100}
           className="drop-shadow-lg"
@@ -84,7 +84,7 @@ const PuckmanChat: React.FC<PuckmanChatProps> = ({ onSearch }) => {
               {loading ? (
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
               ) : null}
-              Ask Puckman
+              Ask campus assistant
             </Button>
           </div>
         </div>

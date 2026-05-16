@@ -14,7 +14,7 @@ const PuckmanAvatar: React.FC<PuckmanAvatarProps> = ({ state, onClick }) => {
     >
       <Image
         src={`/${state}.png`}
-        alt="Puckman"
+        alt="Campus search assistant"
         width={150}
         height={150}
         className="drop-shadow-lg"
