@@ -5,10 +5,22 @@ import diningHalls from '@/data/dining_halls.geojson';
 import studyHalls from '@/data/study_halls.geojson';
 import parkingLots from '@/data/parking.geojson';
 import lectureHalls from '@/data/lecture_halls.geojson';
+import { rateLimit, requestKey } from '@/lib/rate-limit';
 
 let openaiClient: OpenAI | null = null;
+const MAX_QUERY_LENGTH = 240;
+const CAMPUS_BOUNDS = {
+  minLng: -73.72,
+  maxLng: -73.64,
+  minLat: 42.70,
+  maxLat: 42.76,
+};
 
 function getOpenAIClient() {
+  if (!process.env.OPENAI_API_KEY) {
+    return null;
+  }
+
   if (!openaiClient) {
     openaiClient = new OpenAI({
       apiKey: process.env.OPENAI_API_KEY
@@ -34,7 +46,6 @@ const knownLocations: Record<string, [number, number]> = {
   // Add other known locations as needed
 };
 
-// Add this helper function at the top of the file
 function calculateDistance(
   point1: [number, number],
   point2: [number, number]
@@ -54,7 +65,6 @@ function calculateDistance(
   return R * c; // Distance in meters
 }
 
-// Add this helper function at the top of the file
 function findBestLocationMatch(buildingName: string): [number, number] | null {
   // First check exact matches in our datasets
   const exactMatch = allLocations.find(loc => 
@@ -102,12 +112,75 @@ function findBestLocationMatch(buildingName: string): [number, number] | null {
   return null;
 }
 
+function isCoordinate(value: unknown): value is [number, number] {
+  return Array.isArray(value) &&
+    value.length === 2 &&
+    value.every((coord) => typeof coord === 'number' && Number.isFinite(coord)) &&
+    value[0] >= -180 &&
+    value[0] <= 180 &&
+    value[1] >= -90 &&
+    value[1] <= 90;
+}
+
+function isCampusCoordinate([lng, lat]: [number, number]) {
+  return lng >= CAMPUS_BOUNDS.minLng &&
+    lng <= CAMPUS_BOUNDS.maxLng &&
+    lat >= CAMPUS_BOUNDS.minLat &&
+    lat <= CAMPUS_BOUNDS.maxLat;
+}
+
+function findLocalLocation(query: string) {
+  const normalized = query.trim().toLowerCase();
+  const exactMatch = allLocations.find((location) =>
+    location.properties.name.toLowerCase() === normalized
+  );
+  const fuzzyMatch = exactMatch ?? allLocations.find((location) => {
+    const name = location.properties.name.toLowerCase();
+    return name.includes(normalized) || normalized.includes(name);
+  });
+
+  if (!fuzzyMatch) {
+    return null;
+  }
+
+  return {
+    buildingName: fuzzyMatch.properties.name,
+    description: [
+      fuzzyMatch.properties.location,
+      fuzzyMatch.properties.notes,
+    ].filter(Boolean).join(' ') || 'Curated RPI campus location from the local GeoJSON dataset.',
+  };
+}
+
 export async function POST(request: Request) {
   try {
+    const limit = rateLimit(requestKey(request, 'search'), 30, 60_000);
+    if (!limit.allowed) {
+      return NextResponse.json({ error: 'Too many requests.' }, { status: 429 });
+    }
+
     const { query: originalQuery, userLocation } = await request.json();
+
+    if (typeof originalQuery !== 'string') {
+      return NextResponse.json({ error: 'Query is required.' }, { status: 400 });
+    }
+
+    const trimmedQuery = originalQuery.trim();
+
+    if (trimmedQuery.length < 2 || trimmedQuery.length > MAX_QUERY_LENGTH) {
+      return NextResponse.json({ error: 'Query must be between 2 and 240 characters.' }, { status: 400 });
+    }
+
+    if (userLocation !== undefined && userLocation !== null && !isCoordinate(userLocation)) {
+      return NextResponse.json({ error: 'Invalid user location.' }, { status: 400 });
+    }
+
+    if (isCoordinate(userLocation) && !isCampusCoordinate(userLocation)) {
+      return NextResponse.json({ error: 'User location must be near the RPI campus area.' }, { status: 400 });
+    }
     
     // Create a mutable copy of the query
-    let processedQuery = originalQuery;
+    let processedQuery = trimmedQuery;
 
     // If query contains "nearest" or "closest" and we have user location, pre-process the data
     if (
@@ -148,7 +221,27 @@ export async function POST(request: Request) {
       processedQuery += ` - Nearest locations are: ${nearestLocations.join(', ')}`;
     }
 
-    const completion = await getOpenAIClient().chat.completions.create({
+    const client = getOpenAIClient();
+    const localMatch = findLocalLocation(trimmedQuery);
+
+    if (!client && localMatch) {
+      const coordinates = findBestLocationMatch(localMatch.buildingName);
+
+      return NextResponse.json({
+        content: localMatch.description,
+        buildingName: localMatch.buildingName,
+        coordinates,
+        confidence: coordinates ? 'exact' : null,
+      });
+    }
+
+    if (!client) {
+      return NextResponse.json({
+        error: 'Campus search is not configured.',
+      }, { status: 503 });
+    }
+
+    const completion = await client.chat.completions.create({
       model: "gpt-4-turbo-preview",
       messages: [
         {
@@ -192,9 +285,6 @@ export async function POST(request: Request) {
       }, { status: 500 });
     }
 
-    // Add debug logging
-    console.log('OpenAI response:', completion.choices[0].message.content);
-
     let aiResponse;
     try {
       aiResponse = JSON.parse(completion.choices[0].message.content);
@@ -205,10 +295,8 @@ export async function POST(request: Request) {
       }
     } catch (parseError) {
       console.error('Failed to parse OpenAI response:', parseError);
-      console.error('Raw content:', completion.choices[0].message.content);
       return NextResponse.json({ 
-        error: 'Invalid response format',
-        details: 'Failed to parse AI response or missing required fields'
+        error: 'Invalid response format'
       }, { status: 500 });
     }
 
@@ -231,8 +319,7 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error('API Error:', error);
     return NextResponse.json({ 
-      error: 'Error processing request',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      error: 'Error processing request'
     }, { status: 500 });
   }
 }

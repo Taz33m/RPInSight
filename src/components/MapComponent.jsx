@@ -11,9 +11,37 @@ import DataMethodologyPanel from '@/components/DataMethodologyPanel'
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN
 
 const campusCenter = [
-  parseFloat(process.env.NEXT_PUBLIC_CAMPUS_CENTER_LNG),
-  parseFloat(process.env.NEXT_PUBLIC_CAMPUS_CENTER_LAT)
+  parseFloat(process.env.NEXT_PUBLIC_CAMPUS_CENTER_LNG ?? '-73.6788'),
+  parseFloat(process.env.NEXT_PUBLIC_CAMPUS_CENTER_LAT ?? '42.7298')
 ]
+
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;')
+}
+
+function safeExternalUrl(value) {
+  try {
+    const url = new URL(String(value))
+    return ['https:', 'http:'].includes(url.protocol) ? url.toString() : null
+  } catch {
+    return null
+  }
+}
+
+function formatValue(value) {
+  if (value && typeof value === 'object') {
+    return Object.entries(value)
+      .map(([key, nestedValue]) => `${key.replaceAll('_', ' ')}: ${nestedValue}`)
+      .join('; ')
+  }
+
+  return String(value ?? '')
+}
 
 export default function MapComponent() {
   const mapContainer = useRef(null)
@@ -28,10 +56,10 @@ export default function MapComponent() {
 
     let content = `
       <div class="p-4 max-w-sm">
-        <h3 class="font-bold text-lg mb-2 text-red-800">${properties.name || 'Unnamed Location'}</h3>`;
+        <h3 class="font-bold text-lg mb-2 text-red-800">${escapeHtml(properties.name || 'Unnamed Location')}</h3>`;
 
     if (properties.location) {
-      content += `<p class="text-sm mb-2 text-gray-600">${properties.location}</p>`;
+      content += `<p class="text-sm mb-2 text-gray-600">${escapeHtml(properties.location)}</p>`;
     }
 
     if (properties.departments && Array.isArray(properties.departments)) {
@@ -39,7 +67,7 @@ export default function MapComponent() {
         <div class="text-sm mb-3">
           <div class="font-semibold mb-1">Departments:</div>
           <ul class="list-disc pl-4">
-            ${properties.departments.map(dept => `<li>${dept}</li>`).join('')}
+            ${properties.departments.map(dept => `<li>${escapeHtml(dept)}</li>`).join('')}
           </ul>
         </div>`;
     }
@@ -48,14 +76,15 @@ export default function MapComponent() {
       content += `
         <div class="text-sm mb-3">
           <div class="font-semibold mb-1">Notes:</div>
-          <p class="text-gray-700">${properties.notes}</p>
+          <p class="text-gray-700">${escapeHtml(properties.notes)}</p>
         </div>`;
     }
 
-    if (properties.additional_info_link) {
+    const additionalInfoUrl = safeExternalUrl(properties.additional_info_link)
+    if (additionalInfoUrl) {
       content += `
         <div class="text-sm mb-2">
-          <a href="${properties.additional_info_link}" target="_blank" class="text-blue-600 hover:text-blue-800 underline">
+          <a href="${additionalInfoUrl}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 underline">
             More Information
           </a>
         </div>`;
@@ -73,12 +102,12 @@ export default function MapComponent() {
             .join('-');
           
           content += `<div class="mb-1">
-            <span class="font-medium">${formattedDay}:</span>
-            <span class="pl-2">${times}</span>
+            <span class="font-medium">${escapeHtml(formattedDay)}:</span>
+            <span class="pl-2">${escapeHtml(formatValue(times))}</span>
           </div>`;
         });
       } else {
-        content += `<div class="pl-2">${properties.hours}</div>`;
+        content += `<div class="pl-2">${escapeHtml(formatValue(properties.hours))}</div>`;
       }
       
       content += `</div>`;
@@ -89,15 +118,16 @@ export default function MapComponent() {
         <div class="text-sm mb-3">
           <div class="font-semibold mb-1">Features:</div>
           <ul class="list-disc pl-4">
-            ${properties.features.map(feature => `<li>${feature}</li>`).join('')}
+            ${properties.features.map(feature => `<li>${escapeHtml(feature)}</li>`).join('')}
           </ul>
         </div>`;
     }
 
-    if (properties.menu_link) {
+    const menuUrl = safeExternalUrl(properties.menu_link)
+    if (menuUrl) {
       content += `
         <div class="text-sm mb-2">
-          <a href="${properties.menu_link}" target="_blank" class="text-blue-600 hover:text-blue-800 underline">
+          <a href="${menuUrl}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 underline">
             View Menu
           </a>
         </div>`;
@@ -164,7 +194,6 @@ export default function MapComponent() {
         map.current.getCanvas().style.cursor = ''
       })
 
-      console.log('Map loaded, setting instance');
       setMapInstance(map.current);
     })
 
@@ -232,7 +261,6 @@ export default function MapComponent() {
             <PuckmanAvatar 
               state={puckmanState} 
               onClick={() => {
-                // Focus the search input when Puckman is clicked
                 const searchInput = document.querySelector('textarea');
                 if (searchInput) searchInput.focus();
               }}
@@ -241,9 +269,7 @@ export default function MapComponent() {
           <div className="mt-4">
             <SearchBar 
               map={mapInstance}
-              onSearch={(location) => {
-                console.log('Search callback received location:', location);
-              }}
+              onSearch={() => {}}
               onPuckmanStateChange={setPuckmanState}
             /> 
           </div>
@@ -252,7 +278,7 @@ export default function MapComponent() {
         <div ref={mapContainer} className="flex-grow" />
       </div>
       <footer className="h-[27px] bg-gradient-to-r from-red-900 to-red-700 text-white text-xs flex items-center justify-between px-4">
-        <span>© 2024 Tazeem Mahashin, RPInSights</span>
+        <span>© 2024 Tazeem Mahashin, RPInSight</span>
         <span className="text-gray-200">Troy, NY 12180</span>
       </footer>
     </div>

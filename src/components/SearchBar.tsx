@@ -39,15 +39,12 @@ const SearchBar: React.FC<SearchBarProps> = ({ map, onSearch, onPuckmanStateChan
 
   const handleInputChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
     setQuery(e.target.value);
-    // Automatically adjust height
     e.target.style.height = 'inherit';
     e.target.style.height = `${e.target.scrollHeight}px`;
   };
 
   const clearMarker = () => {
-    console.log('Clearing existing marker...');
     if (markerRef.current) {
-      console.log('Removing existing marker');
       markerRef.current.remove();
       markerRef.current = null;
     }
@@ -76,7 +73,6 @@ const SearchBar: React.FC<SearchBarProps> = ({ map, onSearch, onPuckmanStateChan
       }
 
       const data = await response.json() as AIResponse;
-      console.log('AI Response:', data);
       
       setAiResponse(data);
       onSearch(data);
@@ -131,16 +127,6 @@ const SearchBar: React.FC<SearchBarProps> = ({ map, onSearch, onPuckmanStateChan
     }
   };
 
-  // Add debug useEffect
-  useEffect(() => {
-    console.log('Current state:', {
-      showTransportModes,
-      hasCoordinates: aiResponse?.coordinates !== null,
-      userLocation: userLocationRef.current
-    });
-  }, [showTransportModes, aiResponse]);
-
-  // Cleanup marker when component unmounts
   useEffect(() => {
     return () => {
       clearMarker();
@@ -148,7 +134,6 @@ const SearchBar: React.FC<SearchBarProps> = ({ map, onSearch, onPuckmanStateChan
   }, []);
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    // Search when Enter is pressed (without Shift)
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       searchWithAI();
@@ -175,12 +160,6 @@ const SearchBar: React.FC<SearchBarProps> = ({ map, onSearch, onPuckmanStateChan
 
     setLoading(true);
     try {
-      console.log('Fetching route with:', {
-        origin: userLocationRef.current,
-        destination: aiResponse.coordinates,
-        mode
-      });
-
       const response = await fetch('/api/directions', {
         method: 'POST',
         headers: {
@@ -198,13 +177,11 @@ const SearchBar: React.FC<SearchBarProps> = ({ map, onSearch, onPuckmanStateChan
       }
 
       const data = await response.json() as DirectionsResponse & { error?: string };
-      console.log('Route data received:', data);
 
       if (data.error) {
         throw new Error(data.error);
       }
 
-      // Remove existing route layer if any
       if (routeLayer && map) {
         if (map.getLayer(routeLayer)) {
           map.removeLayer(routeLayer);
@@ -214,7 +191,6 @@ const SearchBar: React.FC<SearchBarProps> = ({ map, onSearch, onPuckmanStateChan
         }
       }
 
-      // Add the new route layer
       const routeId = `route-${Date.now()}`;
       
       if (!map.getSource(routeId)) {
@@ -245,7 +221,6 @@ const SearchBar: React.FC<SearchBarProps> = ({ map, onSearch, onPuckmanStateChan
 
       setRouteLayer(routeId);
 
-      // Fit the map to show the entire route
       const coordinates = data.routes[0].geometry.coordinates;
       const bounds = coordinates.reduce((bounds: mapboxgl.LngLatBounds, coord: [number, number]) => {
         return bounds.extend(coord);
@@ -264,15 +239,12 @@ const SearchBar: React.FC<SearchBarProps> = ({ map, onSearch, onPuckmanStateChan
     }
   };
 
-  // Add cleanup for route layer
   useEffect(() => {
     return () => {
       if (map && routeLayer) {
-        // Check if layer exists before removing
         if (map.getLayer(routeLayer)) {
           map.removeLayer(routeLayer);
         }
-        // Check if source exists before removing
         if (map.getSource(routeLayer)) {
           map.removeSource(routeLayer);
         }
@@ -280,7 +252,6 @@ const SearchBar: React.FC<SearchBarProps> = ({ map, onSearch, onPuckmanStateChan
     };
   }, [map, routeLayer]);
 
-  // Update the existing useEffect for geolocation
   useEffect(() => {
     if (!map) return;
 
@@ -289,23 +260,14 @@ const SearchBar: React.FC<SearchBarProps> = ({ map, onSearch, onPuckmanStateChan
     ) as mapboxgl.GeolocateControl;
 
     if (geolocateControl) {
-      // Listen for the geolocate event
       geolocateControl.on('geolocate', (e: GeolocationPosition) => {
         const { longitude, latitude } = e.coords;
         userLocationRef.current = [longitude, latitude];
-        console.log('User location updated:', userLocationRef.current);
         
-        // If we have a destination already, show transport modes
         if (aiResponse?.coordinates) {
           setShowTransportModes(true);
         }
       });
-
-      // Also listen for when location is available
-      geolocateControl.on('trackuserlocationstart', () => {
-        console.log('Location tracking started');
-      });
-
     }
   }, [map, aiResponse]);
 
